@@ -164,6 +164,26 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION public.ensure_unique_patient_phone()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF NEW.phone IS NOT NULL AND btrim(NEW.phone) <> '' THEN
+    IF EXISTS (
+      SELECT 1
+      FROM public.patients p
+      WHERE p.phone = NEW.phone
+        AND p.id <> COALESCE(NEW.id, gen_random_uuid())
+    ) THEN
+      RAISE EXCEPTION 'Patient phone number already exists';
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
 CREATE OR REPLACE FUNCTION public.has_role(_user_id uuid, _role app_role)
 RETURNS boolean
 LANGUAGE sql
@@ -301,6 +321,11 @@ DROP TRIGGER IF EXISTS trg_patients_updated ON public.patients;
 CREATE TRIGGER trg_patients_updated
 BEFORE UPDATE ON public.patients
 FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+DROP TRIGGER IF EXISTS trg_patients_unique_phone ON public.patients;
+CREATE TRIGGER trg_patients_unique_phone
+BEFORE INSERT OR UPDATE ON public.patients
+FOR EACH ROW EXECUTE FUNCTION public.ensure_unique_patient_phone();
 
 DROP TRIGGER IF EXISTS trg_doctors_updated ON public.doctors;
 CREATE TRIGGER trg_doctors_updated

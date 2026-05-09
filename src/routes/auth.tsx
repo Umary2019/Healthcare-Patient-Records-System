@@ -47,17 +47,19 @@ async function ensureBootstrapRecords(userId: string, email: string | undefined,
   const roleValue = typeof selectedRole === "string" ? selectedRole : (typeof metadata.role === "string" ? metadata.role : "patient");
   const role = SAFE_ROLES.has(roleValue as (typeof SAFE_ROLES extends Set<infer T> ? T : never)) ? roleValue : "patient";
 
-  const { data: existingProfile } = await supabase.from("profiles").select("id").eq("id", userId).maybeSingle();
+  const { data: profileRows } = await supabase.from("profiles").select("id").eq("id", userId).limit(1);
+  const existingProfile = profileRows?.[0] ?? null;
   if (!existingProfile) {
     await supabase.from("profiles").insert({ id: userId, full_name: fullName, phone });
   }
 
-  const { data: existingRole } = await supabase
+  const { data: roleRows } = await supabase
     .from("user_roles")
     .select("id")
     .eq("user_id", userId)
     .eq("role", role)
-    .maybeSingle();
+    .limit(1);
+  const existingRole = roleRows?.[0] ?? null;
   if (!existingRole) {
     await supabase.from("user_roles").insert({
       user_id: userId,
@@ -66,7 +68,8 @@ async function ensureBootstrapRecords(userId: string, email: string | undefined,
   }
 
   if (role === "patient") {
-    const { data: existingPatient } = await supabase.from("patients").select("id").eq("user_id", userId).maybeSingle();
+    const { data: patientRows } = await supabase.from("patients").select("id").eq("user_id", userId).order("created_at", { ascending: true }).limit(1);
+    const existingPatient = patientRows?.[0] ?? null;
     if (!existingPatient) {
       await supabase.from("patients").insert({
         user_id: userId,
@@ -78,7 +81,8 @@ async function ensureBootstrapRecords(userId: string, email: string | undefined,
   }
 
   if (role === "doctor") {
-    const { data: existingDoctor } = await supabase.from("doctors").select("id").eq("user_id", userId).maybeSingle();
+    const { data: doctorRows } = await supabase.from("doctors").select("id").eq("user_id", userId).order("created_at", { ascending: true }).limit(1);
+    const existingDoctor = doctorRows?.[0] ?? null;
     if (!existingDoctor) {
       await supabase.from("doctors").insert({
         user_id: userId,
@@ -171,6 +175,21 @@ function AuthPage() {
       if (typeof parsed.data.age !== "number" || Number.isNaN(parsed.data.age)) return toast.error("Age is required for patient accounts.");
       if (!parsed.data.address) return toast.error("Address is required for patient accounts.");
       if (!parsed.data.phone) return toast.error("Phone number is required for patient accounts.");
+
+      const phoneValue = parsed.data.phone.replace(/\s+/g, "").trim();
+      const { data: duplicatePhoneRows, error: duplicatePhoneError } = await supabase
+        .from("patients")
+        .select("id")
+        .eq("phone", phoneValue)
+        .limit(1);
+      if (duplicatePhoneError) {
+        toast.error(duplicatePhoneError.message);
+        return;
+      }
+      if ((duplicatePhoneRows ?? []).length > 0) {
+        toast.error("That phone number is already registered. Please use a different phone number.");
+        return;
+      }
     }
     if (parsed.data.role === "doctor" && !parsed.data.specialization) {
       toast.error("Specialization is required for doctor accounts.");

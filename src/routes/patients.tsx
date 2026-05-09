@@ -19,7 +19,7 @@ import { useAuth } from "@/lib/auth-context";
 export const Route = createFileRoute("/patients")({
   head: () => ({ meta: [{ title: "Patients — CareRecords" }] }),
   component: () => (
-    <ProtectedRoute roles={["admin", "doctor", "receptionist"]}>
+    <ProtectedRoute roles={["admin", "doctor", "receptionist", "lab_officer"]}>
       <AppShell><Patients /></AppShell>
     </ProtectedRoute>
   ),
@@ -44,13 +44,18 @@ type Patient = {
   medical_history: string | null;
 };
 
+function normalizePhone(value: unknown) {
+  return typeof value === "string" ? value.replace(/\s+/g, "").trim() : "";
+}
+
 function Patients() {
-  const { user, hasRole } = useAuth();
+  const { user, hasRole, primaryRole } = useAuth();
   const [list, setList] = useState<Patient[]>([]);
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Patient | null>(null);
   const [loading, setLoading] = useState(true);
+  const canMutatePatients = primaryRole === "admin" || primaryRole === "receptionist";
 
   const load = async () => {
     setLoading(true);
@@ -80,12 +85,26 @@ function Patients() {
     const parsed = schema.safeParse(raw);
     if (!parsed.success) return toast.error(parsed.error.issues[0].message);
 
+    const nextPhone = normalizePhone(parsed.data.phone);
+    if (nextPhone) {
+      const { data: existingPhone } = await supabase
+        .from("patients")
+        .select("id")
+        .eq("phone", nextPhone)
+        .neq("id", editing?.id ?? "00000000-0000-0000-0000-000000000000")
+        .maybeSingle();
+      if (existingPhone) {
+        toast.error("That phone number is already registered for another patient.");
+        return;
+      }
+    }
+
     if (editing) {
-      const { error } = await supabase.from("patients").update(parsed.data).eq("id", editing.id);
+      const { error } = await supabase.from("patients").update({ ...parsed.data, phone: nextPhone || null }).eq("id", editing.id);
       if (error) return toast.error(error.message);
       toast.success("Patient updated");
     } else {
-      const { error } = await supabase.from("patients").insert([{ ...parsed.data, created_by: user?.id }]);
+      const { error } = await supabase.from("patients").insert([{ ...parsed.data, phone: nextPhone || null, created_by: user?.id }]);
       if (error) return toast.error(error.message);
       toast.success("Patient added");
     }
@@ -113,37 +132,39 @@ function Patients() {
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search..." className="w-64 pl-8" />
             </div>
-            <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditing(null); }}>
-              <DialogTrigger asChild>
-                <Button><Plus className="mr-1 h-4 w-4" /> Add patient</Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-lg">
-                <DialogHeader>
-                  <DialogTitle>{editing ? "Edit patient" : "New patient"}</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={onSubmit} className="grid gap-4">
-                  <div className="grid gap-1.5"><Label htmlFor="full_name">Full name</Label><Input id="full_name" name="full_name" defaultValue={editing?.full_name} required /></div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="grid gap-1.5"><Label htmlFor="age">Age</Label><Input id="age" name="age" type="number" min={0} max={150} defaultValue={editing?.age ?? ""} /></div>
-                    <div className="grid gap-1.5">
-                      <Label htmlFor="gender">Gender</Label>
-                      <Select name="gender" defaultValue={editing?.gender ?? undefined}>
-                        <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="male">Male</SelectItem>
-                          <SelectItem value="female">Female</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
+            {canMutatePatients && (
+              <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditing(null); }}>
+                <DialogTrigger asChild>
+                  <Button><Plus className="mr-1 h-4 w-4" /> Add patient</Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle>{editing ? "Edit patient" : "New patient"}</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={onSubmit} className="grid gap-4">
+                    <div className="grid gap-1.5"><Label htmlFor="full_name">Full name</Label><Input id="full_name" name="full_name" defaultValue={editing?.full_name} required /></div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="grid gap-1.5"><Label htmlFor="age">Age</Label><Input id="age" name="age" type="number" min={0} max={150} defaultValue={editing?.age ?? ""} /></div>
+                      <div className="grid gap-1.5">
+                        <Label htmlFor="gender">Gender</Label>
+                        <Select name="gender" defaultValue={editing?.gender ?? undefined}>
+                          <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="male">Male</SelectItem>
+                            <SelectItem value="female">Female</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                  </div>
-                  <div className="grid gap-1.5"><Label htmlFor="phone">Phone</Label><Input id="phone" name="phone" defaultValue={editing?.phone ?? ""} /></div>
-                  <div className="grid gap-1.5"><Label htmlFor="address">Address</Label><Input id="address" name="address" defaultValue={editing?.address ?? ""} /></div>
-                  <div className="grid gap-1.5"><Label htmlFor="medical_history">Medical history</Label><Textarea id="medical_history" name="medical_history" rows={3} defaultValue={editing?.medical_history ?? ""} /></div>
-                  <DialogFooter><Button type="submit">{editing ? "Save" : "Create"}</Button></DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
+                    <div className="grid gap-1.5"><Label htmlFor="phone">Phone</Label><Input id="phone" name="phone" defaultValue={editing?.phone ?? ""} /></div>
+                    <div className="grid gap-1.5"><Label htmlFor="address">Address</Label><Input id="address" name="address" defaultValue={editing?.address ?? ""} /></div>
+                    <div className="grid gap-1.5"><Label htmlFor="medical_history">Medical history</Label><Textarea id="medical_history" name="medical_history" rows={3} defaultValue={editing?.medical_history ?? ""} /></div>
+                    <DialogFooter><Button type="submit">{editing ? "Save" : "Create"}</Button></DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            )}
           </>
         }
       />
@@ -171,7 +192,9 @@ function Patients() {
                 <TableCell className="capitalize">{p.gender ?? "—"}</TableCell>
                 <TableCell>{p.phone ?? "—"}</TableCell>
                 <TableCell className="text-right">
-                  <Button variant="ghost" size="icon" onClick={() => { setEditing(p); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>
+                  {canMutatePatients && (
+                    <Button variant="ghost" size="icon" onClick={() => { setEditing(p); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>
+                  )}
                   {hasRole("admin") && (
                     <Button variant="ghost" size="icon" onClick={() => onDelete(p.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                   )}

@@ -51,11 +51,23 @@ function Appointments() {
   const [selectedDoctorId, setSelectedDoctorId] = useState<string>("");
   const isPatient = primaryRole === "patient";
 
+  const getSinglePatientRecord = async (userId: string) => {
+    const { data, error } = await supabase
+      .from("patients")
+      .select("id, full_name")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: true })
+      .limit(1);
+
+    if (error) throw error;
+    return data?.[0] ?? null;
+  };
+
   const ensureOwnPatientRecord = async () => {
     if (!user || !isPatient) return;
 
-    const { data: existing } = await supabase.from("patients").select("id").eq("user_id", user.id).maybeSingle();
-    if (existing) return;
+    const existing = await getSinglePatientRecord(user.id);
+    if (existing) return existing;
 
     const { data: profile } = await supabase.from("profiles").select("full_name, phone").eq("id", user.id).maybeSingle();
     const metadata = user.user_metadata as Record<string, unknown> | undefined;
@@ -88,13 +100,14 @@ function Appointments() {
         if (!selectedPatientId && nextPatients.length > 0) setSelectedPatientId(nextPatients[0].id);
       });
     } else if (user) {
-      supabase.from("patients").select("id, full_name").eq("user_id", user.id).maybeSingle().then(({ data, error }) => {
-        if (error) return toast.error(error.message);
-        if (data) {
-          setPatients([data]);
-          setSelectedPatientId(data.id);
-        }
-      });
+      getSinglePatientRecord(user.id)
+        .then((data) => {
+          if (data) {
+            setPatients([data]);
+            setSelectedPatientId(data.id);
+          }
+        })
+        .catch((error) => toast.error(error.message));
     }
     supabase.from("doctors").select("id, full_name, specialization").order("full_name").then(({ data }) => setDoctors(data ?? []));
   }, [isStaff, user, isPatient]);
