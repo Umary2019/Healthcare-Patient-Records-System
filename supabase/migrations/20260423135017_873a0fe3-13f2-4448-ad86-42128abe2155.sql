@@ -152,11 +152,13 @@ create trigger on_auth_user_created
 -- 10. RLS policies
 
 -- user_roles
+create policy "users insert own role" on public.user_roles for insert with check (auth.uid() = user_id and role in ('patient','doctor','receptionist','lab_officer'));
 create policy "users see own roles" on public.user_roles for select using (auth.uid() = user_id);
 create policy "admins see all roles" on public.user_roles for select using (public.has_role(auth.uid(),'admin'));
 create policy "admins manage roles" on public.user_roles for all using (public.has_role(auth.uid(),'admin')) with check (public.has_role(auth.uid(),'admin'));
 
 -- profiles
+create policy "users insert own profile" on public.profiles for insert with check (auth.uid() = id);
 create policy "view own profile" on public.profiles for select using (auth.uid() = id);
 create policy "staff view all profiles" on public.profiles for select using (public.is_staff(auth.uid()));
 create policy "update own profile" on public.profiles for update using (auth.uid() = id);

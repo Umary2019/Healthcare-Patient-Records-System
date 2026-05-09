@@ -38,6 +38,51 @@ const signInSchema = z.object({
   password: z.string().min(1),
 });
 
+const SAFE_ROLES = new Set(["patient", "doctor", "receptionist", "lab_officer"] as const);
+
+async function ensureBootstrapRecords(userId: string, email: string | undefined, metadata: Record<string, unknown>, selectedRole?: string) {
+  const fullName = typeof metadata.full_name === "string" ? metadata.full_name.trim() : "";
+  const phone = typeof metadata.phone === "string" ? metadata.phone.trim() : null;
+  const specialization = typeof metadata.specialization === "string" && metadata.specialization.trim() ? metadata.specialization.trim() : "General Practice";
+  const roleValue = typeof selectedRole === "string" ? selectedRole : (typeof metadata.role === "string" ? metadata.role : "patient");
+  const role = SAFE_ROLES.has(roleValue as (typeof SAFE_ROLES extends Set<infer T> ? T : never)) ? roleValue : "patient";
+
+  await supabase.from("profiles").upsert(
+    { id: userId, full_name: fullName, phone },
+    { onConflict: "id" }
+  );
+
+  await supabase.from("user_roles").upsert(
+    { user_id: userId, role: role as "patient" | "doctor" | "receptionist" | "lab_officer" },
+    { onConflict: "user_id,role" }
+  );
+
+  if (role === "patient") {
+    await supabase.from("patients").upsert(
+      {
+        user_id: userId,
+        full_name: fullName || "Patient",
+        phone,
+        created_by: userId,
+      },
+      { onConflict: "user_id" }
+    );
+  }
+
+  if (role === "doctor") {
+    await supabase.from("doctors").upsert(
+      {
+        user_id: userId,
+        full_name: fullName || "Doctor",
+        specialization,
+        phone,
+        email: email ?? null,
+      },
+      { onConflict: "user_id" }
+    );
+  }
+}
+
 function AuthPage() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -75,6 +120,14 @@ function AuthPage() {
 
       return toast.error(error.message);
     }
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    const sessionUser = sessionData.session?.user;
+    if (sessionUser) {
+      await ensureBootstrapRecords(sessionUser.id, sessionUser.email ?? undefined, sessionUser.user_metadata as Record<string, unknown>, sessionUser.user_metadata?.role);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+
     sessionStorage.setItem("post_login_welcome", "1");
     navigate({ to: "/dashboard" });
   };
@@ -134,6 +187,11 @@ function AuthPage() {
     });
     setBusy(false);
     if (error) return toast.error(error.message);
+
+    if (data.user) {
+      await ensureBootstrapRecords(data.user.id, data.user.email ?? undefined, data.user.user_metadata as Record<string, unknown>, parsed.data.role);
+    }
+
     if (!data.session) {
       toast.success(
         `Account created as ${parsed.data.role}. If email confirmation is enabled in Supabase, check your inbox before signing in.`
