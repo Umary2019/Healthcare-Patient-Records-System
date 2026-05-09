@@ -67,9 +67,9 @@ const ROLE_META = {
     accent: "bg-primary/10 text-primary",
   },
   doctor: {
-    eyebrow: "Clinical workflow",
-    title: "Doctor clinical board",
-    description: "Move from patient history to diagnosis and prescriptions without losing the clinical thread.",
+    eyebrow: "Care workflow",
+    title: "Doctor care board",
+    description: "Move from patient history to diagnosis and prescriptions without losing the care context.",
     gradient: "from-emerald-950 via-slate-900 to-slate-950",
     badge: "bg-emerald-500/15 text-emerald-400",
     highlights: ["Open consultations", "Write diagnoses", "Create prescriptions"],
@@ -481,8 +481,8 @@ function Dashboard() {
               </SectionCard>
             </div>
             <div className="space-y-4">
-              <DashboardActions actions={roleActions.doctor} title="Clinical shortcuts" />
-              <SectionCard title="Clinical focus" className="border-emerald-500/15 bg-emerald-500/5">
+              <DashboardActions actions={roleActions.doctor} title="Care shortcuts" />
+              <SectionCard title="Care focus" className="border-emerald-500/15 bg-emerald-500/5">
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li>• Pull up patient history before you consult.</li>
                   <li>• Capture diagnosis and treatment plan in one pass.</li>
