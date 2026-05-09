@@ -16,7 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/billing")({
-  head: () => ({ meta: [{ title: "Billing — MediCare" }] }),
+  head: () => ({ meta: [{ title: "Billing — CareRecords" }] }),
   component: () => (
     <ProtectedRoute roles={["admin", "receptionist", "patient"]}>
       <AppShell><Billing /></AppShell>
@@ -82,7 +82,7 @@ function Billing() {
       <html><head><title>Invoice</title>
       <style>body{font-family:sans-serif;padding:32px;color:#222}h1{margin:0}table{width:100%;border-collapse:collapse;margin:20px 0}th,td{padding:8px;border-bottom:1px solid #ddd;text-align:left}.right{text-align:right}</style>
       </head><body>
-      <h1>MediCare Invoice</h1>
+      <h1>CareRecords Invoice</h1>
       <p><strong>Patient:</strong> ${bill.patients?.full_name ?? ""}<br/><strong>Date:</strong> ${format(new Date(bill.created_at), "PPP")}<br/><strong>Status:</strong> ${bill.status}</p>
       <table><thead><tr><th>Service</th><th class="right">Qty</th><th class="right">Price</th><th class="right">Subtotal</th></tr></thead><tbody>
       ${(bill.services || []).map((s: Service) => `<tr><td>${s.name}</td><td class="right">${s.qty}</td><td class="right">₦${Number(s.price).toFixed(2)}</td><td class="right">₦${(Number(s.qty) * Number(s.price)).toFixed(2)}</td></tr>`).join("")}

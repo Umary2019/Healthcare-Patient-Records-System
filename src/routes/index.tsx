@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "MediCare — Modern Clinic Management System" },
+      { title: "CareRecords — Modern Clinic Management System" },
       { name: "description", content: "Manage patients, doctors, appointments, medical records and billing — all in one secure platform." },
     ],
   }),
@@ -32,7 +32,7 @@ function Landing() {
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary-glow text-primary-foreground">
             <Activity className="h-5 w-5" />
           </div>
-          <span className="text-lg font-bold">MediCare</span>
+          <span className="text-lg font-bold">CareRecords</span>
         </div>
         <nav className="hidden items-center gap-6 text-sm md:flex">
           <Link to="/services" className="text-muted-foreground hover:text-foreground">Services</Link>
@@ -101,7 +101,7 @@ function Landing() {
       </section>
 
       <footer className="border-t bg-muted/40 py-8 text-center text-sm text-muted-foreground">
-        © {new Date().getFullYear()} MediCare. Built with care.
+        © {new Date().getFullYear()} CareRecords. Built with care.
       </footer>
     </div>
   );
