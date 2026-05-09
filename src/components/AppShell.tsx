@@ -29,15 +29,12 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "doctor", "receptionist", "patient"] },
-  { to: "/patients", label: "Patients", icon: Users, roles: ["admin", "doctor", "receptionist", "lab_officer"] },
-  { to: "/doctors", label: "Doctors", icon: Stethoscope, roles: ["admin", "doctor", "receptionist", "patient"] },
-  { to: "/appointments", label: "Appointments", icon: CalendarDays, roles: ["admin", "doctor", "receptionist", "patient"] },
-  { to: "/records", label: "Medical Records", icon: FileText, roles: ["admin", "doctor", "receptionist", "patient"] },
-  { to: "/billing", label: "Billing", icon: Receipt, roles: ["admin", "receptionist", "patient"] },
-  { to: "/lab-results", label: "Lab Results", icon: Activity, roles: ["admin", "lab_officer", "doctor"] },
-  { to: "/profile", label: "My Profile", icon: Activity, roles: ["admin", "doctor", "receptionist", "patient", "lab_officer"] },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "doctor", "receptionist", "lab_officer", "patient"] },
   { to: "/admin", label: "Admin", icon: ShieldCheck, roles: ["admin"] },
+  { to: "/patients", label: "Patients", icon: Users, roles: ["doctor", "receptionist", "lab_officer", "admin"] },
+  { to: "/records", label: "Medical Records", icon: FileText, roles: ["doctor", "patient"] },
+  { to: "/lab-results", label: "Lab Results", icon: Activity, roles: ["doctor", "lab_officer"] },
+  { to: "/profile", label: "My Profile", icon: Activity, roles: ["admin", "doctor", "receptionist", "patient", "lab_officer"] },
 ];
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
@@ -55,7 +52,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         </div>
         <div>
           <div className="font-bold leading-tight">CareRecords</div>
-          <div className="text-xs text-muted-foreground">Clinic Management</div>
+          <div className="text-xs text-muted-foreground">Healthcare Management</div>
         </div>
       </div>
 

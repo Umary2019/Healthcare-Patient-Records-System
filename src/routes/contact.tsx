@@ -11,9 +11,9 @@ export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
       { title: "Contact — CareRecords" },
-      { name: "description", content: "Get in touch with the CareRecords team. We're here to help your clinic get started." },
+      { name: "description", content: "Get in touch with the CareRecords team. We're here to help your healthcare project get started." },
       { property: "og:title", content: "Contact CareRecords" },
-      { property: "og:description", content: "Reach out to the CareRecords team for clinics and healthcare providers." },
+      { property: "og:description", content: "Reach out to the CareRecords team for healthcare providers." },
     ],
   }),
   component: ContactPage,

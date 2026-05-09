@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "CareRecords — Modern Clinic Management System" },
+      { title: "CareRecords — Modern Healthcare Management System" },
       { name: "description", content: "Manage patients, doctors, appointments, medical records and billing — all in one secure platform." },
     ],
   }),
@@ -54,7 +54,7 @@ function Landing() {
               <ShieldCheck className="h-3.5 w-3.5" /> HIPAA-conscious • Role-based access
             </div>
             <h1 className="text-4xl font-bold tracking-tight md:text-6xl">
-              The complete clinic, in one calm dashboard.
+              The complete healthcare experience, in one calm dashboard.
             </h1>
             <p className="mt-5 text-lg text-primary-foreground/85 md:text-xl">
               Patients, doctors, appointments, records, and billing — unified with bank-grade security.
@@ -79,7 +79,7 @@ function Landing() {
 
       <section className="container mx-auto px-4 py-16 md:py-24">
         <div className="mx-auto mb-12 max-w-2xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight md:text-4xl">Everything your clinic needs</h2>
+          <h2 className="text-3xl font-bold tracking-tight md:text-4xl">Everything your healthcare team needs</h2>
           <p className="mt-3 text-muted-foreground">
             From the front desk to the consultation room — built for real workflows.
           </p>

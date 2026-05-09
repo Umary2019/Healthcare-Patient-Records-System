@@ -192,34 +192,16 @@ function RoleHero({ role }: { role: keyof typeof ROLE_META }) {
 
   return (
     <section className={`mb-6 overflow-hidden rounded-3xl border bg-gradient-to-br ${meta.gradient} p-6 text-white shadow-[var(--shadow-elegant)]`}>
-      <div className="grid gap-6 lg:grid-cols-[1.4fr_0.9fr] lg:items-center">
-        <div>
-          <div className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${meta.badge}`}>{meta.eyebrow}</div>
-          <h1 className="mt-4 text-3xl font-bold tracking-tight md:text-4xl">{meta.title}</h1>
-          <p className="mt-3 max-w-2xl text-sm text-white/80 md:text-base">{meta.description}</p>
-          <div className="mt-5 flex flex-wrap gap-2">
-            {meta.highlights.map((item) => (
-              <span key={item} className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs backdrop-blur">
-                {item}
-              </span>
-            ))}
-          </div>
-        </div>
-        <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur">
-          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-            <div className="rounded-xl bg-black/20 p-3">
-              <div className="text-xs uppercase tracking-wide text-white/60">Focus</div>
-              <div className="mt-1 text-sm font-medium">Role-specific workflow</div>
-            </div>
-            <div className="rounded-xl bg-black/20 p-3">
-              <div className="text-xs uppercase tracking-wide text-white/60">Access</div>
-              <div className="mt-1 text-sm font-medium">Protected by RBAC</div>
-            </div>
-            <div className="rounded-xl bg-black/20 p-3">
-              <div className="text-xs uppercase tracking-wide text-white/60">Source</div>
-              <div className="mt-1 text-sm font-medium">Live Supabase data</div>
-            </div>
-          </div>
+      <div>
+        <div className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${meta.badge}`}>{meta.eyebrow}</div>
+        <h1 className="mt-4 text-3xl font-bold tracking-tight md:text-4xl">{meta.title}</h1>
+        <p className="mt-3 max-w-2xl text-sm text-white/80 md:text-base">{meta.description}</p>
+        <div className="mt-5 flex flex-wrap gap-2">
+          {meta.highlights.map((item) => (
+            <span key={item} className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs backdrop-blur">
+              {item}
+            </span>
+          ))}
         </div>
       </div>
     </section>

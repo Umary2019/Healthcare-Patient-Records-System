@@ -6,9 +6,9 @@ export const Route = createFileRoute("/services")({
   head: () => ({
     meta: [
       { title: "Services — CareRecords" },
-      { name: "description", content: "Patient management, appointments, medical records, billing and role-based access — everything a modern clinic needs." },
+      { name: "description", content: "Patient management, appointments, medical records, billing and role-based access — everything a modern healthcare team needs." },
       { property: "og:title", content: "CareRecords Services" },
-      { property: "og:description", content: "Comprehensive clinic management modules for modern healthcare teams." },
+      { property: "og:description", content: "Comprehensive healthcare management modules for modern healthcare teams." },
     ],
   }),
   component: ServicesPage,

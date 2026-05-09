@@ -6,9 +6,9 @@ export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
       { title: "About — CareRecords" },
-      { name: "description", content: "Learn about CareRecords' mission to modernize clinic operations with secure, role-based healthcare software." },
+      { name: "description", content: "Learn about CareRecords' mission to modernize healthcare operations with secure, role-based software." },
       { property: "og:title", content: "About CareRecords" },
-      { property: "og:description", content: "Our mission to modernize clinic operations with secure healthcare software." },
+      { property: "og:description", content: "Our mission to modernize healthcare operations with secure software." },
     ],
   }),
   component: AboutPage,
@@ -27,7 +27,7 @@ function AboutPage() {
         <div className="mx-auto max-w-3xl text-center">
           <h1 className="text-4xl font-bold tracking-tight md:text-5xl">About CareRecords</h1>
           <p className="mt-5 text-lg text-muted-foreground">
-            We help clinics replace clipboards and chaos with one calm dashboard — so care teams can focus on what matters most.
+            We help healthcare teams replace clipboards and chaos with one calm dashboard — so care teams can focus on what matters most.
           </p>
         </div>
         <div className="mx-auto mt-14 grid max-w-4xl gap-6 sm:grid-cols-3">

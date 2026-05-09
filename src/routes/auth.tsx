@@ -218,7 +218,7 @@ function AuthPage() {
             <Activity className="h-6 w-6" />
           </div>
           <h1 className="text-2xl font-bold">CareRecords</h1>
-          <p className="text-sm text-muted-foreground">Clinic Management System</p>
+          <p className="text-sm text-muted-foreground">Healthcare Management System</p>
         </div>
 
         <div className="rounded-xl border bg-card p-6 shadow-[var(--shadow-card)]">
