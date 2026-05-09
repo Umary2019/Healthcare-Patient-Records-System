@@ -47,11 +47,11 @@ This is a web-based client-server application with a frontend UI, backend API, a
 
 2.2 User Classes and Characteristics
 
-- Admin: manages users, permissions, views system dashboard and reports.
-- Receptionist/Records Officer: registers and updates patient demographic data, searches patients.
-- Doctor: views patient history, records consultations, creates prescriptions, views lab results.
-- Lab Officer: records and updates lab results linked to patients and consultations.
-- Patient: views own profile, consultations, prescriptions, lab results, and history.
+- Admin: manages users, permissions, doctors, receptionists, billing oversight, dashboards, and system reports.
+- Receptionist/Records Officer: registers patients, updates biodata, searches records, manages appointments, and handles invoices.
+- Doctor: views patient history, records consultations, creates prescriptions, requests and reviews lab results, and manages appointments.
+- Lab Officer: reviews lab requests, records and corrects lab results, and maintains lab history.
+- Patient: views own profile, appointments, prescriptions, lab reports, invoices, and payment status.
 
 2.3 Operating Environment
 
@@ -112,6 +112,52 @@ FR-013 — Logout
 
 FR-014 — Reporting
 - The system shall generate summary reports for Admin (patient counts, activity logs, basic metrics).
+
+FR-015 — Admin Dashboard and System Overview
+- The system shall provide the Admin with a dashboard showing total patients, doctors, receptionists, appointments, medical records, prescriptions, lab reports, invoices, and recent system activities.
+
+FR-016 — User and Role Administration
+- The Admin shall be able to create users, view users, update users, deactivate users, assign roles, manage doctors, manage receptionists, and manage patient portal accounts.
+
+FR-017 — Doctor Profile Management
+- The Admin shall be able to add doctor profiles, update specialization, update availability, view schedules, and deactivate doctor profiles.
+
+FR-018 — Billing Oversight
+- The Admin and authorized front-desk staff shall be able to view invoices, payment status, unpaid balances, and financial summaries.
+
+FR-019 — Receptionist Dashboard and Patient Registration
+- The system shall provide a Receptionist dashboard showing today’s appointments, recently registered patients, pending appointments, payment status summary, and quick actions.
+- The system shall allow a Receptionist to register patients with full name, gender, date of birth or age, phone number, address, blood group, insurance details, emergency contact name, emergency contact phone, and patient ID.
+
+FR-020 — Receptionist Patient Data Maintenance
+- The system shall allow a Receptionist to update patient biodata including phone number, address, emergency contact, insurance information, and personal details.
+- The system shall prevent the Receptionist from editing diagnosis, prescriptions, or lab interpretations.
+
+FR-021 — Appointment and Invoice Management
+- The system shall allow Receptionists and authorized users to book, approve, reschedule, cancel, and track appointment status.
+- The system shall allow Receptionists to generate invoices, update payment status, issue receipts, and track pending payments.
+
+FR-022 — Doctor Dashboard and Patient Clinical View
+- The system shall provide a Doctor dashboard showing today’s appointments, assigned patients, recent consultations, pending lab reports, and quick access to medical records.
+- The system shall allow Doctors to view patient details, medical history, chronic conditions, allergies, previous treatments, previous consultations, prescriptions, and lab reports.
+
+FR-023 — Medical History and Consultation Entry
+- The system shall allow Doctors to view and update chronic conditions, allergies, past illnesses, previous treatments, family medical history, and medical notes.
+- The system shall allow Doctors to record consultation details including patient complaints, symptoms, diagnosis, treatment plan, doctor’s note, consultation date, and follow-up date.
+
+FR-024 — Prescription and Lab Workflow
+- The system shall allow Doctors to create prescriptions including drug name, dosage, frequency, duration, instructions, patient name, doctor name, and consultation reference.
+- The system shall allow Doctors to request lab tests and review lab reports.
+- The system shall allow Lab Officers to view lab requests, add lab results, update results before final submission, and view lab result history.
+
+FR-025 — Patient Self-Service and Information Hiding
+- The system shall provide Patients with a dashboard showing personal profile, upcoming appointments, recent consultations, prescriptions, lab reports, invoices, and payment status.
+- The system shall allow Patients to view only their own profile, medical history, consultation history, prescriptions, lab reports, invoices, and payment receipts.
+- The system shall restrict patients from accessing other patients’ records and all administrative functions.
+
+FR-026 — Security and Access Control
+- The system shall enforce role-based access control so that Admin, Receptionist, Doctor, Lab Officer, and Patient can only access modules permitted by their roles.
+- The system shall prevent unauthorized users from accessing restricted routes, records, or actions.
 
 ## 4. Non-Functional Requirements
 
@@ -188,7 +234,11 @@ UC-05: Patient View Own Records
 - Validate all inputs server-side and client-side.
 - Hash and never display passwords.
 - Use parameterized queries or ORM to prevent SQL injection.
-- Keep sensitive fields access-limited (doctors view clinical data; receptionists view demographic data only).
+- Keep sensitive fields access-limited so each role sees only the minimum data required for the workflow.
+- Receptionists may manage demographics, appointments, and billing data but must not edit diagnosis, prescriptions, or lab interpretation.
+- Doctors may manage clinical data but must not manage user accounts or system settings.
+- Lab Officers may manage lab requests and lab results but must not change prescriptions, consultations, or billing control.
+- Patients may view only their own records, invoices, and results.
 
 ## 9. Test Cases and Validation
 

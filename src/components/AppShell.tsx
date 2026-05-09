@@ -14,11 +14,7 @@ import {
 } from "lucide-react";
 import { useAuth, type AppRole } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -29,12 +25,49 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "doctor", "receptionist", "lab_officer", "patient"] },
+  {
+    to: "/dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+    roles: ["admin", "doctor", "receptionist", "lab_officer", "patient"],
+  },
   { to: "/admin", label: "Admin", icon: ShieldCheck, roles: ["admin"] },
-  { to: "/patients", label: "Patients", icon: Users, roles: ["doctor", "receptionist", "lab_officer", "admin"] },
-  { to: "/records", label: "Medical Records", icon: FileText, roles: ["doctor", "patient"] },
-  { to: "/lab-results", label: "Lab Results", icon: Activity, roles: ["doctor", "lab_officer"] },
-  { to: "/profile", label: "My Profile", icon: Activity, roles: ["admin", "doctor", "receptionist", "patient", "lab_officer"] },
+  {
+    to: "/patients",
+    label: "Patients",
+    icon: Users,
+    roles: ["doctor", "receptionist", "lab_officer", "admin"],
+  },
+  {
+    to: "/appointments",
+    label: "Appointments",
+    icon: CalendarDays,
+    roles: ["admin", "doctor", "receptionist", "patient"],
+  },
+  {
+    to: "/records",
+    label: "Medical Records",
+    icon: FileText,
+    roles: ["doctor", "patient"],
+  },
+  {
+    to: "/lab-results",
+    label: "Lab Results",
+    icon: Activity,
+    roles: ["doctor", "lab_officer"],
+  },
+  {
+    to: "/billing",
+    label: "Billing",
+    icon: Receipt,
+    roles: ["admin", "receptionist", "patient"],
+  },
+  {
+    to: "/profile",
+    label: "My Profile",
+    icon: Activity,
+    roles: ["admin", "doctor", "receptionist", "patient", "lab_officer"],
+  },
 ];
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
@@ -52,13 +85,17 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         </div>
         <div>
           <div className="font-bold leading-tight">Health Care Records</div>
-          <div className="text-xs text-muted-foreground">Healthcare Management</div>
+          <div className="text-xs text-muted-foreground">
+            Healthcare Management
+          </div>
         </div>
       </div>
 
       <nav className="flex-1 space-y-1 px-3 py-4">
         {items.map((item) => {
-          const active = location.pathname === item.to || location.pathname.startsWith(item.to + "/");
+          const active =
+            location.pathname === item.to ||
+            location.pathname.startsWith(item.to + "/");
           const Icon = item.icon;
           return (
             <Link
@@ -69,7 +106,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                 "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                 active
                   ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
               )}
             >
               <Icon className="h-4 w-4" />
