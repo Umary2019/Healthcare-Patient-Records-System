@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "CareRecords — Modern Healthcare Management System" },
+      { title: "Health Care Records — Modern Healthcare Management System" },
       { name: "description", content: "Manage patients, doctors, appointments, medical records and billing — all in one secure platform." },
     ],
   }),
@@ -32,7 +32,7 @@ function Landing() {
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary-glow text-primary-foreground">
             <Activity className="h-5 w-5" />
           </div>
-          <span className="text-lg font-bold">CareRecords</span>
+          <span className="text-lg font-bold">Health Care Records</span>
         </div>
         <nav className="hidden items-center gap-6 text-sm md:flex">
           <Link to="/services" className="text-muted-foreground hover:text-foreground">Services</Link>
@@ -51,7 +51,7 @@ function Landing() {
         <div className="container mx-auto px-4 py-20 md:py-28">
           <div className="mx-auto max-w-3xl text-center text-primary-foreground">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium backdrop-blur">
-              <ShieldCheck className="h-3.5 w-3.5" /> HIPAA-conscious • Role-based access
+              <ShieldCheck className="h-3.5 w-3.5" /> Privacy-first • Role-based access
             </div>
             <h1 className="text-4xl font-bold tracking-tight md:text-6xl">
               The complete healthcare experience, in one calm dashboard.
@@ -101,7 +101,7 @@ function Landing() {
       </section>
 
       <footer className="border-t bg-muted/40 py-8 text-center text-sm text-muted-foreground">
-        © {new Date().getFullYear()} CareRecords. Built with care.
+        © {new Date().getFullYear()} Health Care Records. Built with care.
       </footer>
     </div>
   );

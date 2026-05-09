@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/services")({
   head: () => ({
     meta: [
-      { title: "Services — CareRecords" },
+      { title: "Services — Health Care Records" },
       { name: "description", content: "Patient management, appointments, medical records, billing and role-based access — everything a modern healthcare team needs." },
-      { property: "og:title", content: "CareRecords Services" },
+      { property: "og:title", content: "Health Care Records Services" },
       { property: "og:description", content: "Comprehensive healthcare management modules for modern healthcare teams." },
     ],
   }),
@@ -54,7 +54,7 @@ function SiteHeader() {
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary-glow text-primary-foreground">
           <Activity className="h-5 w-5" />
         </div>
-        <span className="text-lg font-bold">CareRecords</span>
+        <span className="text-lg font-bold">Health Care Records</span>
       </Link>
       <nav className="hidden items-center gap-6 text-sm md:flex">
         <Link to="/services" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-foreground font-medium" }}>Services</Link>

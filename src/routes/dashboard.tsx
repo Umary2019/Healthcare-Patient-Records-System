@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/dashboard")({
-  head: () => ({ meta: [{ title: "Dashboard — CareRecords" }] }),
+  head: () => ({ meta: [{ title: "Dashboard — Health Care Records" }] }),
   component: () => (
     <ProtectedRoute>
       <AppShell>

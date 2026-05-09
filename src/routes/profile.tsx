@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 export const Route = createFileRoute("/profile")({
-  head: () => ({ meta: [{ title: "My profile — CareRecords" }] }),
+  head: () => ({ meta: [{ title: "My profile — Health Care Records" }] }),
   component: () => (
     <ProtectedRoute>
       <AppShell><Profile /></AppShell>

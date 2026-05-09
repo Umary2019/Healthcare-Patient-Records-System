@@ -51,7 +51,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           <Activity className="h-5 w-5" />
         </div>
         <div>
-          <div className="font-bold leading-tight">CareRecords</div>
+          <div className="font-bold leading-tight">Health Care Records</div>
           <div className="text-xs text-muted-foreground">Healthcare Management</div>
         </div>
       </div>
@@ -119,7 +119,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <SidebarContent />
             </SheetContent>
           </Sheet>
-          <div className="font-semibold">CareRecords</div>
+          <div className="font-semibold">Health Care Records</div>
         </header>
 
         <main className="flex-1 overflow-auto p-4 md:p-8">{children}</main>

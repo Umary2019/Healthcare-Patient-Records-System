@@ -17,7 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/patients")({
-  head: () => ({ meta: [{ title: "Patients — CareRecords" }] }),
+  head: () => ({ meta: [{ title: "Patients — Health Care Records" }] }),
   component: () => (
     <ProtectedRoute roles={["admin", "doctor", "receptionist", "lab_officer"]}>
       <AppShell><Patients /></AppShell>

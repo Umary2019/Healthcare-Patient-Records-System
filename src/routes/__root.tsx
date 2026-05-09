@@ -31,7 +31,7 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "CareRecords — Healthcare Management System" },
+      { title: "Health Care Records — Healthcare Management System" },
       { name: "description", content: "Modern, secure healthcare management for patients, doctors, appointments, records, and billing." },
     ],
     links: [

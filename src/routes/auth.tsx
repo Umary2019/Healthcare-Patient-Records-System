@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 
 export const Route = createFileRoute("/auth")({
-  head: () => ({ meta: [{ title: "Sign in — CareRecords" }] }),
+  head: () => ({ meta: [{ title: "Sign in — Health Care Records" }] }),
   component: AuthPage,
 });
 
@@ -236,7 +236,7 @@ function AuthPage() {
           <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-glow text-primary-foreground shadow-[var(--shadow-elegant)]">
             <Activity className="h-6 w-6" />
           </div>
-          <h1 className="text-2xl font-bold">CareRecords</h1>
+          <h1 className="text-2xl font-bold">Health Care Records</h1>
           <p className="text-sm text-muted-foreground">Healthcare Management System</p>
         </div>
 

@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
-      { title: "About — CareRecords" },
-      { name: "description", content: "Learn about CareRecords' mission to modernize healthcare operations with secure, role-based software." },
-      { property: "og:title", content: "About CareRecords" },
+      { title: "About — Health Care Records" },
+      { name: "description", content: "Learn about Health Care Records' mission to modernize healthcare operations with secure, role-based software." },
+      { property: "og:title", content: "About Health Care Records" },
       { property: "og:description", content: "Our mission to modernize healthcare operations with secure software." },
     ],
   }),
@@ -25,7 +25,7 @@ function AboutPage() {
       <SiteHeader />
       <section className="container mx-auto px-4 py-16 md:py-24">
         <div className="mx-auto max-w-3xl text-center">
-          <h1 className="text-4xl font-bold tracking-tight md:text-5xl">About CareRecords</h1>
+          <h1 className="text-4xl font-bold tracking-tight md:text-5xl">About Health Care Records</h1>
           <p className="mt-5 text-lg text-muted-foreground">
             We help healthcare teams replace clipboards and chaos with one calm dashboard — so care teams can focus on what matters most.
           </p>
@@ -53,7 +53,7 @@ function SiteHeader() {
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary-glow text-primary-foreground">
           <Activity className="h-5 w-5" />
         </div>
-        <span className="text-lg font-bold">CareRecords</span>
+        <span className="text-lg font-bold">Health Care Records</span>
       </Link>
       <nav className="hidden items-center gap-6 text-sm md:flex">
         <Link to="/services" className="text-muted-foreground hover:text-foreground">Services</Link>

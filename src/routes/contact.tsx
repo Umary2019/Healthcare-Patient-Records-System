@@ -10,10 +10,10 @@ import { Textarea } from "@/components/ui/textarea";
 export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
-      { title: "Contact — CareRecords" },
-      { name: "description", content: "Get in touch with the CareRecords team. We're here to help your healthcare project get started." },
-      { property: "og:title", content: "Contact CareRecords" },
-      { property: "og:description", content: "Reach out to the CareRecords team for healthcare providers." },
+      { title: "Contact — Health Care Records" },
+      { name: "description", content: "Get in touch with the Health Care Records team. We're here to help your healthcare project get started." },
+      { property: "og:title", content: "Contact Health Care Records" },
+      { property: "og:description", content: "Reach out to the Health Care Records team for healthcare providers." },
     ],
   }),
   component: ContactPage,
@@ -98,7 +98,7 @@ function SiteHeader() {
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary-glow text-primary-foreground">
           <Activity className="h-5 w-5" />
         </div>
-        <span className="text-lg font-bold">CareRecords</span>
+        <span className="text-lg font-bold">Health Care Records</span>
       </Link>
       <nav className="hidden items-center gap-6 text-sm md:flex">
         <Link to="/services" className="text-muted-foreground hover:text-foreground">Services</Link>
