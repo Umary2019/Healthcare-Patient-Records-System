@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Users, Stethoscope, CalendarDays, DollarSign, Activity, FileText, Receipt, Clock3, CheckCircle2 } from "lucide-react";
+import { Users, Stethoscope, CalendarDays, DollarSign, Activity, FileText, Receipt, Clock3, CheckCircle2, FlaskConical, TestTube2, ClipboardList, HeartPulse } from "lucide-react";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
@@ -35,6 +35,8 @@ interface DashboardStats {
   myUpcomingAppointments: number;
   myCompletedAppointments: number;
   myUnpaidBills: number;
+  labTestsToday: number;
+  labTestsLogged: number;
 }
 
 const EMPTY_STATS: DashboardStats = {
@@ -50,11 +52,61 @@ const EMPTY_STATS: DashboardStats = {
   myUpcomingAppointments: 0,
   myCompletedAppointments: 0,
   myUnpaidBills: 0,
+  labTestsToday: 0,
+  labTestsLogged: 0,
 };
 
-function StatCard({ icon: Icon, label, value, accent }: { icon: typeof Users; label: string; value: string | number; accent?: string }) {
+const ROLE_META = {
+  admin: {
+    eyebrow: "System control",
+    title: "Admin command center",
+    description: "Oversee users, permissions, compliance, and operational health from a single control room.",
+    gradient: "from-slate-950 via-slate-900 to-indigo-950",
+    badge: "bg-primary/15 text-primary",
+    highlights: ["Manage users", "Review reports", "Monitor security"],
+    accent: "bg-primary/10 text-primary",
+  },
+  doctor: {
+    eyebrow: "Clinical workflow",
+    title: "Doctor clinical board",
+    description: "Move from patient history to diagnosis and prescriptions without losing the clinical thread.",
+    gradient: "from-emerald-950 via-slate-900 to-slate-950",
+    badge: "bg-emerald-500/15 text-emerald-400",
+    highlights: ["Open consultations", "Write diagnoses", "Create prescriptions"],
+    accent: "bg-emerald-500/15 text-emerald-400",
+  },
+  receptionist: {
+    eyebrow: "Front desk",
+    title: "Reception workflow board",
+    description: "Register patients, keep demographics tidy, and keep the waiting room moving.",
+    gradient: "from-amber-950 via-stone-900 to-slate-950",
+    badge: "bg-amber-500/15 text-amber-300",
+    highlights: ["Register patients", "Search records", "Update demographics"],
+    accent: "bg-amber-500/15 text-amber-300",
+  },
+  lab_officer: {
+    eyebrow: "Lab operations",
+    title: "Lab result console",
+    description: "Record test outcomes, review result history, and keep the lab queue clean and traceable.",
+    gradient: "from-cyan-950 via-slate-900 to-slate-950",
+    badge: "bg-cyan-500/15 text-cyan-300",
+    highlights: ["Record test results", "Track lab history", "Review patient samples"],
+    accent: "bg-cyan-500/15 text-cyan-300",
+  },
+  patient: {
+    eyebrow: "Personal care",
+    title: "My health overview",
+    description: "See your own records, follow your care plan, and stay ahead of upcoming visits.",
+    gradient: "from-violet-950 via-slate-900 to-slate-950",
+    badge: "bg-violet-500/15 text-violet-300",
+    highlights: ["View profile", "Review prescriptions", "Check lab results"],
+    accent: "bg-violet-500/15 text-violet-300",
+  },
+} as const;
+
+function StatCard({ icon: Icon, label, value, accent, className }: { icon: typeof Users; label: string; value: string | number; accent?: string; className?: string }) {
   return (
-    <div className="rounded-xl border bg-card p-5 shadow-[var(--shadow-card)]">
+    <div className={`rounded-xl border bg-card p-5 shadow-[var(--shadow-card)] ${className ?? ""}`}>
       <div className="flex items-center justify-between">
         <div className="text-sm font-medium text-muted-foreground">{label}</div>
         <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${accent ?? "bg-accent text-accent-foreground"}`}>
@@ -66,18 +118,18 @@ function StatCard({ icon: Icon, label, value, accent }: { icon: typeof Users; la
   );
 }
 
-function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
+function SectionCard({ title, children, className }: { title: string; children: React.ReactNode; className?: string }) {
   return (
-    <div className="rounded-xl border bg-card p-6 shadow-[var(--shadow-card)]">
+    <div className={`rounded-xl border bg-card p-6 shadow-[var(--shadow-card)] ${className ?? ""}`}>
       <h2 className="mb-4 font-semibold">{title}</h2>
       {children}
     </div>
   );
 }
 
-function DashboardActions({ actions }: { actions: Array<{ label: string; to: string }> }) {
+function DashboardActions({ actions, title = "Quick actions" }: { actions: Array<{ label: string; to: string }>; title?: string }) {
   return (
-    <SectionCard title="Quick actions">
+    <SectionCard title={title}>
       <div className="flex flex-wrap gap-2">
         {actions.map((action) => (
           <Button key={action.to} asChild size="sm" variant="outline">
@@ -112,11 +164,74 @@ function AppointmentList({ list, emptyText }: { list: any[]; emptyText: string }
   );
 }
 
+function LabResultList({ list, emptyText }: { list: any[]; emptyText: string }) {
+  if (list.length === 0) {
+    return <p className="text-sm text-muted-foreground">{emptyText}</p>;
+  }
+
+  return (
+    <div className="divide-y">
+      {list.map((result) => (
+        <div key={result.id} className="flex items-center justify-between py-3 text-sm">
+          <div>
+            <div className="font-medium">{result.test_name}</div>
+            <div className="text-xs text-muted-foreground">{result.patients?.full_name ?? "—"}</div>
+          </div>
+          <div className="text-right">
+            <div className="max-w-[16rem] truncate">{result.result}</div>
+            <div className="text-xs text-muted-foreground">{format(new Date(result.test_date), "PP p")}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RoleHero({ role }: { role: keyof typeof ROLE_META }) {
+  const meta = ROLE_META[role];
+
+  return (
+    <section className={`mb-6 overflow-hidden rounded-3xl border bg-gradient-to-br ${meta.gradient} p-6 text-white shadow-[var(--shadow-elegant)]`}>
+      <div className="grid gap-6 lg:grid-cols-[1.4fr_0.9fr] lg:items-center">
+        <div>
+          <div className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${meta.badge}`}>{meta.eyebrow}</div>
+          <h1 className="mt-4 text-3xl font-bold tracking-tight md:text-4xl">{meta.title}</h1>
+          <p className="mt-3 max-w-2xl text-sm text-white/80 md:text-base">{meta.description}</p>
+          <div className="mt-5 flex flex-wrap gap-2">
+            {meta.highlights.map((item) => (
+              <span key={item} className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs backdrop-blur">
+                {item}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur">
+          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+            <div className="rounded-xl bg-black/20 p-3">
+              <div className="text-xs uppercase tracking-wide text-white/60">Focus</div>
+              <div className="mt-1 text-sm font-medium">Role-specific workflow</div>
+            </div>
+            <div className="rounded-xl bg-black/20 p-3">
+              <div className="text-xs uppercase tracking-wide text-white/60">Access</div>
+              <div className="mt-1 text-sm font-medium">Protected by RBAC</div>
+            </div>
+            <div className="rounded-xl bg-black/20 p-3">
+              <div className="text-xs uppercase tracking-wide text-white/60">Source</div>
+              <div className="mt-1 text-sm font-medium">Live Supabase data</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function Dashboard() {
   const { user, primaryRole, roles } = useAuth();
   const [stats, setStats] = useState<DashboardStats>(EMPTY_STATS);
   const [recentAppts, setRecentAppts] = useState<any[]>([]);
   const [myRecords, setMyRecords] = useState<any[]>([]);
+  const [recentLabResults, setRecentLabResults] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -130,6 +245,7 @@ function Dashboard() {
     if (primaryRole === "doctor") message = `Welcome, Dr. ${firstName}!`;
     if (primaryRole === "admin") message = `Welcome, Admin ${firstName}!`;
     if (primaryRole === "receptionist") message = `Welcome, Receptionist ${firstName}!`;
+    if (primaryRole === "lab_officer") message = `Welcome, Lab Officer ${firstName}!`;
 
     toast.success(message);
     sessionStorage.removeItem("post_login_welcome");
@@ -154,8 +270,9 @@ function Dashboard() {
       ]);
       const patientId = patientRow?.id;
       const doctorId = doctorRow?.id;
+      const activeRole = (primaryRole ?? "patient") as keyof typeof ROLE_META;
 
-      if (primaryRole === "admin") {
+      if (activeRole === "admin") {
         const [pat, doc, appt, todayAppt, pendingAppt, bills, recent] = await Promise.all([
           supabase.from("patients").select("id", { count: "exact", head: true }),
           supabase.from("doctors").select("id", { count: "exact", head: true }),
@@ -180,10 +297,11 @@ function Dashboard() {
         });
         setRecentAppts(recent.data ?? []);
         setMyRecords([]);
+        setRecentLabResults([]);
         return;
       }
 
-      if (primaryRole === "doctor" && doctorId) {
+      if (activeRole === "doctor" && doctorId) {
         const [allMine, todayMine, pendingMine, completedMine, upcomingMine] = await Promise.all([
           supabase.from("appointments").select("id", { count: "exact", head: true }).eq("doctor_id", doctorId),
           supabase.from("appointments").select("id", { count: "exact", head: true }).eq("doctor_id", doctorId).gte("scheduled_at", start).lte("scheduled_at", end),
@@ -208,10 +326,11 @@ function Dashboard() {
         });
         setRecentAppts(upcomingMine.data ?? []);
         setMyRecords([]);
+        setRecentLabResults([]);
         return;
       }
 
-      if (primaryRole === "receptionist") {
+      if (activeRole === "receptionist") {
         const monthStart = new Date();
         monthStart.setDate(1);
         monthStart.setHours(0, 0, 0, 0);
@@ -232,10 +351,36 @@ function Dashboard() {
         });
         setRecentAppts(latestAppt.data ?? []);
         setMyRecords([]);
+        setRecentLabResults([]);
         return;
       }
 
-      if (primaryRole === "patient" && patientId) {
+      if (activeRole === "lab_officer") {
+        const [testsToday, totalTests, totalPatients, recentTests] = await Promise.all([
+          supabase.from("lab_results").select("id", { count: "exact", head: true }).eq("lab_officer_id", user.id).gte("test_date", start).lte("test_date", end),
+          supabase.from("lab_results").select("id", { count: "exact", head: true }).eq("lab_officer_id", user.id),
+          supabase.from("patients").select("id", { count: "exact", head: true }),
+          supabase
+            .from("lab_results")
+            .select("id, test_name, result, test_date, patients(full_name)")
+            .eq("lab_officer_id", user.id)
+            .order("test_date", { ascending: false })
+            .limit(6),
+        ]);
+
+        setStats({
+          ...EMPTY_STATS,
+          labTestsToday: testsToday.count ?? 0,
+          labTestsLogged: totalTests.count ?? 0,
+          totalPatients: totalPatients.count ?? 0,
+        });
+        setRecentAppts([]);
+        setMyRecords([]);
+        setRecentLabResults(recentTests.data ?? []);
+        return;
+      }
+
+      if (activeRole === "patient" && patientId) {
         const [allMine, upcomingMine, completedMine, myBills, nextAppts, records] = await Promise.all([
           supabase.from("appointments").select("id", { count: "exact", head: true }).eq("patient_id", patientId),
           supabase.from("appointments").select("id", { count: "exact", head: true }).eq("patient_id", patientId).gte("scheduled_at", nowIso),
@@ -261,6 +406,7 @@ function Dashboard() {
         });
         setRecentAppts(nextAppts.data ?? []);
         setMyRecords(records.data ?? []);
+        setRecentLabResults([]);
       }
     })();
   }, [primaryRole, roles.join(","), user]);
@@ -281,6 +427,11 @@ function Dashboard() {
       { label: "Register Patient", to: "/patients" },
       { label: "Create Invoice", to: "/billing" },
     ],
+    lab_officer: [
+      { label: "Record Lab Result", to: "/lab-results" },
+      { label: "View Patients", to: "/patients" },
+      { label: "Open Profile", to: "/profile" },
+    ],
     patient: [
       { label: "Book Appointment", to: "/appointments" },
       { label: "My Records", to: "/records" },
@@ -288,14 +439,19 @@ function Dashboard() {
     ],
   };
 
+  const activeRole = (primaryRole ?? "patient") as keyof typeof ROLE_META;
+  const meta = ROLE_META[activeRole];
+
   return (
     <>
+      <RoleHero role={activeRole} />
+
       <PageHeader
         title={`Welcome back${user?.email ? ", " + user.email.split("@")[0] : ""}`}
-        description={`Signed in as ${primaryRole ?? "user"}.`}
+        description={`Signed in as ${activeRole}.`}
       />
 
-      {primaryRole === "admin" && (
+      {activeRole === "admin" && (
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard icon={Users} label="Total patients" value={stats.totalPatients} accent="bg-primary/10 text-primary" />
@@ -310,16 +466,25 @@ function Dashboard() {
           </div>
           <div className="mt-8 grid gap-4 lg:grid-cols-3">
             <div className="lg:col-span-2">
-              <SectionCard title="Recent appointments">
+              <SectionCard title="Recent appointments" className="border-primary/15 bg-gradient-to-br from-card to-primary/5">
                 <AppointmentList list={recentAppts} emptyText="No appointments yet." />
               </SectionCard>
             </div>
-            <DashboardActions actions={roleActions.admin} />
+            <div className="space-y-4">
+              <DashboardActions actions={roleActions.admin} title="Governance shortcuts" />
+              <SectionCard title="Admin focus" className="border-primary/15 bg-primary/5">
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li>• Review active users and role assignments.</li>
+                  <li>• Watch platform activity and system health.</li>
+                  <li>• Use reports to spot operational bottlenecks.</li>
+                </ul>
+              </SectionCard>
+            </div>
           </div>
         </>
       )}
 
-      {primaryRole === "doctor" && (
+      {activeRole === "doctor" && (
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard icon={CalendarDays} label="All appointments" value={stats.myAppointments} accent="bg-chart-3/15 text-chart-3" />
@@ -329,16 +494,25 @@ function Dashboard() {
           </div>
           <div className="mt-8 grid gap-4 lg:grid-cols-3">
             <div className="lg:col-span-2">
-              <SectionCard title="Upcoming consultations">
+              <SectionCard title="Upcoming consultations" className="border-emerald-500/15 bg-gradient-to-br from-card to-emerald-500/5">
                 <AppointmentList list={recentAppts} emptyText="No upcoming consultations." />
               </SectionCard>
             </div>
-            <DashboardActions actions={roleActions.doctor} />
+            <div className="space-y-4">
+              <DashboardActions actions={roleActions.doctor} title="Clinical shortcuts" />
+              <SectionCard title="Clinical focus" className="border-emerald-500/15 bg-emerald-500/5">
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li>• Pull up patient history before you consult.</li>
+                  <li>• Capture diagnosis and treatment plan in one pass.</li>
+                  <li>• Keep prescriptions and lab checks connected.</li>
+                </ul>
+              </SectionCard>
+            </div>
           </div>
         </>
       )}
 
-      {primaryRole === "receptionist" && (
+      {activeRole === "receptionist" && (
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard icon={CalendarDays} label="Appointments today" value={stats.todayAppointments} accent="bg-chart-3/15 text-chart-3" />
@@ -348,16 +522,53 @@ function Dashboard() {
           </div>
           <div className="mt-8 grid gap-4 lg:grid-cols-3">
             <div className="lg:col-span-2">
-              <SectionCard title="Latest appointment activity">
+              <SectionCard title="Latest appointment activity" className="border-amber-500/15 bg-gradient-to-br from-card to-amber-500/5">
                 <AppointmentList list={recentAppts} emptyText="No appointment activity yet." />
               </SectionCard>
             </div>
-            <DashboardActions actions={roleActions.receptionist} />
+            <div className="space-y-4">
+              <DashboardActions actions={roleActions.receptionist} title="Front desk shortcuts" />
+              <SectionCard title="Front desk focus" className="border-amber-500/15 bg-amber-500/5">
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li>• Register new patients and correct demographics fast.</li>
+                  <li>• Search existing patients before booking or updating.</li>
+                  <li>• Keep the day moving with clear appointment status.</li>
+                </ul>
+              </SectionCard>
+            </div>
           </div>
         </>
       )}
 
-      {primaryRole === "patient" && (
+      {activeRole === "lab_officer" && (
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard icon={FlaskConical} label="Tests logged" value={stats.labTestsLogged} accent="bg-cyan-500/15 text-cyan-300" />
+            <StatCard icon={TestTube2} label="Tests today" value={stats.labTestsToday} accent="bg-cyan-500/15 text-cyan-300" />
+            <StatCard icon={Users} label="Patients available" value={stats.totalPatients} accent="bg-primary/10 text-primary" />
+            <StatCard icon={ClipboardList} label="Worklist status" value="Live" accent="bg-success/15 text-success" />
+          </div>
+          <div className="mt-8 grid gap-4 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+              <SectionCard title="Recent lab results" className="border-cyan-500/15 bg-gradient-to-br from-card to-cyan-500/5">
+                <LabResultList list={recentLabResults} emptyText="No lab results recorded yet." />
+              </SectionCard>
+            </div>
+            <div className="space-y-4">
+              <DashboardActions actions={roleActions.lab_officer} title="Lab shortcuts" />
+              <SectionCard title="Lab focus" className="border-cyan-500/15 bg-cyan-500/5">
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li>• Record new test results against the correct patient.</li>
+                  <li>• Update result history when readings change.</li>
+                  <li>• Use patient lookup to reduce mislabeling risk.</li>
+                </ul>
+              </SectionCard>
+            </div>
+          </div>
+        </>
+      )}
+
+      {activeRole === "patient" && (
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard icon={CalendarDays} label="My appointments" value={stats.myAppointments} accent="bg-chart-3/15 text-chart-3" />
@@ -367,10 +578,10 @@ function Dashboard() {
           </div>
           <div className="mt-8 grid gap-4 lg:grid-cols-3">
             <div className="lg:col-span-2 space-y-4">
-              <SectionCard title="My next appointments">
+              <SectionCard title="My next appointments" className="border-violet-500/15 bg-gradient-to-br from-card to-violet-500/5">
                 <AppointmentList list={recentAppts} emptyText="No upcoming appointments." />
               </SectionCard>
-              <SectionCard title="Recent medical records">
+              <SectionCard title="Recent medical records" className="border-violet-500/15 bg-violet-500/5">
                 {myRecords.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No medical records yet.</p>
                 ) : (
@@ -389,11 +600,11 @@ function Dashboard() {
               </SectionCard>
             </div>
             <div className="space-y-4">
-              <DashboardActions actions={roleActions.patient} />
-              <SectionCard title="Health reminder">
+              <DashboardActions actions={roleActions.patient} title="Care shortcuts" />
+              <SectionCard title="Care reminder" className="border-violet-500/15 bg-violet-500/5">
                 <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <FileText className="mt-0.5 h-4 w-4 text-primary" />
-                  Keep your profile and contact details updated so appointment reminders and billing notices reach you on time.
+                  <HeartPulse className="mt-0.5 h-4 w-4 text-primary" />
+                  Keep your profile and contact details updated so appointment reminders, lab updates, and billing notices reach you on time.
                 </div>
               </SectionCard>
             </div>

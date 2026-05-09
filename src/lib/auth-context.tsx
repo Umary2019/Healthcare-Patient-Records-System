@@ -18,7 +18,7 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-const ROLE_PRIORITY: AppRole[] = ["admin", "doctor", "receptionist", "patient"];
+const ROLE_PRIORITY: AppRole[] = ["admin", "doctor", "receptionist", "lab_officer", "patient"];
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -58,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     roles,
     loading,
     hasRole: (r) => roles.includes(r),
-    isStaff: roles.some((r) => r === "admin" || r === "doctor" || r === "receptionist"),
+    isStaff: roles.some((r) => r === "admin" || r === "doctor" || r === "receptionist" || r === "lab_officer"),
     primaryRole: ROLE_PRIORITY.find((r) => roles.includes(r)) ?? null,
     signOut: async () => {
       await supabase.auth.signOut();

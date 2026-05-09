@@ -47,39 +47,47 @@ async function ensureBootstrapRecords(userId: string, email: string | undefined,
   const roleValue = typeof selectedRole === "string" ? selectedRole : (typeof metadata.role === "string" ? metadata.role : "patient");
   const role = SAFE_ROLES.has(roleValue as (typeof SAFE_ROLES extends Set<infer T> ? T : never)) ? roleValue : "patient";
 
-  await supabase.from("profiles").upsert(
-    { id: userId, full_name: fullName, phone },
-    { onConflict: "id" }
-  );
+  const { data: existingProfile } = await supabase.from("profiles").select("id").eq("id", userId).maybeSingle();
+  if (!existingProfile) {
+    await supabase.from("profiles").insert({ id: userId, full_name: fullName, phone });
+  }
 
-  await supabase.from("user_roles").upsert(
-    { user_id: userId, role: role as "patient" | "doctor" | "receptionist" | "lab_officer" },
-    { onConflict: "user_id,role" }
-  );
+  const { data: existingRole } = await supabase
+    .from("user_roles")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("role", role)
+    .maybeSingle();
+  if (!existingRole) {
+    await supabase.from("user_roles").insert({
+      user_id: userId,
+      role: role as "patient" | "doctor" | "receptionist" | "lab_officer",
+    });
+  }
 
   if (role === "patient") {
-    await supabase.from("patients").upsert(
-      {
+    const { data: existingPatient } = await supabase.from("patients").select("id").eq("user_id", userId).maybeSingle();
+    if (!existingPatient) {
+      await supabase.from("patients").insert({
         user_id: userId,
         full_name: fullName || "Patient",
         phone,
         created_by: userId,
-      },
-      { onConflict: "user_id" }
-    );
+      });
+    }
   }
 
   if (role === "doctor") {
-    await supabase.from("doctors").upsert(
-      {
+    const { data: existingDoctor } = await supabase.from("doctors").select("id").eq("user_id", userId).maybeSingle();
+    if (!existingDoctor) {
+      await supabase.from("doctors").insert({
         user_id: userId,
         full_name: fullName || "Doctor",
         specialization,
         phone,
         email: email ?? null,
-      },
-      { onConflict: "user_id" }
-    );
+      });
+    }
   }
 }
 

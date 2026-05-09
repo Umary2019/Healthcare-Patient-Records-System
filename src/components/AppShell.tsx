@@ -30,7 +30,7 @@ interface NavItem {
 
 const NAV: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "doctor", "receptionist", "patient"] },
-  { to: "/patients", label: "Patients", icon: Users, roles: ["admin", "doctor", "receptionist"] },
+  { to: "/patients", label: "Patients", icon: Users, roles: ["admin", "doctor", "receptionist", "lab_officer"] },
   { to: "/doctors", label: "Doctors", icon: Stethoscope, roles: ["admin", "doctor", "receptionist", "patient"] },
   { to: "/appointments", label: "Appointments", icon: CalendarDays, roles: ["admin", "doctor", "receptionist", "patient"] },
   { to: "/records", label: "Medical Records", icon: FileText, roles: ["admin", "doctor", "receptionist", "patient"] },
