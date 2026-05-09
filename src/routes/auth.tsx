@@ -62,7 +62,19 @@ function AuthPage() {
     setBusy(true);
     const { error } = await supabase.auth.signInWithPassword(parsed.data);
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      if (/email not confirmed/i.test(error.message)) {
+        toast.error("Please confirm your email in Supabase before signing in, or disable email confirmation in the Supabase Auth settings.");
+        return;
+      }
+
+      if (/invalid login credentials/i.test(error.message) || error.status === 400) {
+        toast.error("Invalid email or password. If you just registered, confirm your email first if email verification is enabled.");
+        return;
+      }
+
+      return toast.error(error.message);
+    }
     sessionStorage.setItem("post_login_welcome", "1");
     navigate({ to: "/dashboard" });
   };
@@ -104,7 +116,7 @@ function AuthPage() {
       return;
     }
     setBusy(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: parsed.data.email,
       password: parsed.data.password,
       options: {
@@ -122,7 +134,14 @@ function AuthPage() {
     });
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success(`Account created as ${parsed.data.role} — you can sign in now.`);
+    if (!data.session) {
+      toast.success(
+        `Account created as ${parsed.data.role}. If email confirmation is enabled in Supabase, check your inbox before signing in.`
+      );
+      return;
+    }
+
+    toast.success(`Account created as ${parsed.data.role} — you are signed in.`);
   };
 
   return (
