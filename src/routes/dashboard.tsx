@@ -1,0 +1,405 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { Users, Stethoscope, CalendarDays, DollarSign, Activity, FileText, Receipt, Clock3, CheckCircle2 } from "lucide-react";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { AppShell } from "@/components/AppShell";
+import { PageHeader } from "@/components/PageHeader";
+import { useAuth } from "@/lib/auth-context";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+
+export const Route = createFileRoute("/dashboard")({
+  head: () => ({ meta: [{ title: "Dashboard — MediCare" }] }),
+  component: () => (
+    <ProtectedRoute>
+      <AppShell>
+        <Dashboard />
+      </AppShell>
+    </ProtectedRoute>
+  ),
+});
+
+interface DashboardStats {
+  totalPatients: number;
+  totalDoctors: number;
+  totalAppointments: number;
+  todayAppointments: number;
+  pendingAppointments: number;
+  completedAppointments: number;
+  unpaidBills: number;
+  paidRevenue: number;
+  myAppointments: number;
+  myUpcomingAppointments: number;
+  myCompletedAppointments: number;
+  myUnpaidBills: number;
+}
+
+const EMPTY_STATS: DashboardStats = {
+  totalPatients: 0,
+  totalDoctors: 0,
+  totalAppointments: 0,
+  todayAppointments: 0,
+  pendingAppointments: 0,
+  completedAppointments: 0,
+  unpaidBills: 0,
+  paidRevenue: 0,
+  myAppointments: 0,
+  myUpcomingAppointments: 0,
+  myCompletedAppointments: 0,
+  myUnpaidBills: 0,
+};
+
+function StatCard({ icon: Icon, label, value, accent }: { icon: typeof Users; label: string; value: string | number; accent?: string }) {
+  return (
+    <div className="rounded-xl border bg-card p-5 shadow-[var(--shadow-card)]">
+      <div className="flex items-center justify-between">
+        <div className="text-sm font-medium text-muted-foreground">{label}</div>
+        <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${accent ?? "bg-accent text-accent-foreground"}`}>
+          <Icon className="h-4 w-4" />
+        </div>
+      </div>
+      <div className="mt-3 text-3xl font-bold">{value}</div>
+    </div>
+  );
+}
+
+function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border bg-card p-6 shadow-[var(--shadow-card)]">
+      <h2 className="mb-4 font-semibold">{title}</h2>
+      {children}
+    </div>
+  );
+}
+
+function DashboardActions({ actions }: { actions: Array<{ label: string; to: string }> }) {
+  return (
+    <SectionCard title="Quick actions">
+      <div className="flex flex-wrap gap-2">
+        {actions.map((action) => (
+          <Button key={action.to} asChild size="sm" variant="outline">
+            <Link to={action.to}>{action.label}</Link>
+          </Button>
+        ))}
+      </div>
+    </SectionCard>
+  );
+}
+
+function AppointmentList({ list, emptyText }: { list: any[]; emptyText: string }) {
+  if (list.length === 0) {
+    return <p className="text-sm text-muted-foreground">{emptyText}</p>;
+  }
+
+  return (
+    <div className="divide-y">
+      {list.map((a) => (
+        <div key={a.id} className="flex items-center justify-between py-3 text-sm">
+          <div>
+            <div className="font-medium">{a.patients?.full_name ?? "—"}</div>
+            <div className="text-xs text-muted-foreground">with Dr. {a.doctors?.full_name ?? "—"}</div>
+          </div>
+          <div className="text-right">
+            <div>{format(new Date(a.scheduled_at), "PP p")}</div>
+            <div className="text-xs capitalize text-muted-foreground">{a.status}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Dashboard() {
+  const { user, primaryRole, roles } = useAuth();
+  const [stats, setStats] = useState<DashboardStats>(EMPTY_STATS);
+  const [recentAppts, setRecentAppts] = useState<any[]>([]);
+  const [myRecords, setMyRecords] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+    const shouldWelcome = sessionStorage.getItem("post_login_welcome") === "1";
+    if (!shouldWelcome) return;
+    const metadataName = typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name.trim() : "";
+    const firstNameFromMeta = metadataName ? metadataName.split(/\s+/)[0] : "";
+    const firstName = firstNameFromMeta || user.email?.split("@")[0] || "there";
+
+    let message = `Welcome, ${firstName}!`;
+    if (primaryRole === "doctor") message = `Welcome, Dr. ${firstName}!`;
+    if (primaryRole === "admin") message = `Welcome, Admin ${firstName}!`;
+    if (primaryRole === "receptionist") message = `Welcome, Receptionist ${firstName}!`;
+
+    toast.success(message);
+    sessionStorage.removeItem("post_login_welcome");
+  }, [primaryRole, user]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    (async () => {
+      const today = new Date();
+      const dayStart = new Date(today);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(today);
+      dayEnd.setHours(23, 59, 59, 999);
+      const start = dayStart.toISOString();
+      const end = dayEnd.toISOString();
+      const nowIso = new Date().toISOString();
+
+      const [{ data: patientRow }, { data: doctorRow }] = await Promise.all([
+        supabase.from("patients").select("id").eq("user_id", user.id).maybeSingle(),
+        supabase.from("doctors").select("id").eq("user_id", user.id).maybeSingle(),
+      ]);
+      const patientId = patientRow?.id;
+      const doctorId = doctorRow?.id;
+
+      if (primaryRole === "admin") {
+        const [pat, doc, appt, todayAppt, pendingAppt, bills, recent] = await Promise.all([
+          supabase.from("patients").select("id", { count: "exact", head: true }),
+          supabase.from("doctors").select("id", { count: "exact", head: true }),
+          supabase.from("appointments").select("id", { count: "exact", head: true }),
+          supabase.from("appointments").select("id", { count: "exact", head: true }).gte("scheduled_at", start).lte("scheduled_at", end),
+          supabase.from("appointments").select("id", { count: "exact", head: true }).eq("status", "pending"),
+          supabase.from("bills").select("total,status"),
+          supabase.from("appointments").select("id, scheduled_at, status, patients(full_name), doctors(full_name)").order("scheduled_at", { ascending: false }).limit(6),
+        ]);
+
+        const paidRevenue = (bills.data ?? []).filter((b) => b.status === "paid").reduce((sum, b) => sum + Number(b.total), 0);
+        const unpaidBills = (bills.data ?? []).filter((b) => b.status === "unpaid").length;
+        setStats({
+          ...EMPTY_STATS,
+          totalPatients: pat.count ?? 0,
+          totalDoctors: doc.count ?? 0,
+          totalAppointments: appt.count ?? 0,
+          todayAppointments: todayAppt.count ?? 0,
+          pendingAppointments: pendingAppt.count ?? 0,
+          unpaidBills,
+          paidRevenue,
+        });
+        setRecentAppts(recent.data ?? []);
+        setMyRecords([]);
+        return;
+      }
+
+      if (primaryRole === "doctor" && doctorId) {
+        const [allMine, todayMine, pendingMine, completedMine, upcomingMine] = await Promise.all([
+          supabase.from("appointments").select("id", { count: "exact", head: true }).eq("doctor_id", doctorId),
+          supabase.from("appointments").select("id", { count: "exact", head: true }).eq("doctor_id", doctorId).gte("scheduled_at", start).lte("scheduled_at", end),
+          supabase.from("appointments").select("id", { count: "exact", head: true }).eq("doctor_id", doctorId).eq("status", "pending"),
+          supabase.from("appointments").select("id", { count: "exact", head: true }).eq("doctor_id", doctorId).eq("status", "completed"),
+          supabase
+            .from("appointments")
+            .select("id, scheduled_at, status, patients(full_name), doctors(full_name)")
+            .eq("doctor_id", doctorId)
+            .in("status", ["pending", "approved"])
+            .gte("scheduled_at", nowIso)
+            .order("scheduled_at", { ascending: true })
+            .limit(6),
+        ]);
+
+        setStats({
+          ...EMPTY_STATS,
+          myAppointments: allMine.count ?? 0,
+          todayAppointments: todayMine.count ?? 0,
+          pendingAppointments: pendingMine.count ?? 0,
+          completedAppointments: completedMine.count ?? 0,
+        });
+        setRecentAppts(upcomingMine.data ?? []);
+        setMyRecords([]);
+        return;
+      }
+
+      if (primaryRole === "receptionist") {
+        const monthStart = new Date();
+        monthStart.setDate(1);
+        monthStart.setHours(0, 0, 0, 0);
+        const [todayAppt, pendingAppt, newPatients, unpaidBillsCount, latestAppt] = await Promise.all([
+          supabase.from("appointments").select("id", { count: "exact", head: true }).gte("scheduled_at", start).lte("scheduled_at", end),
+          supabase.from("appointments").select("id", { count: "exact", head: true }).eq("status", "pending"),
+          supabase.from("patients").select("id", { count: "exact", head: true }).gte("created_at", monthStart.toISOString()),
+          supabase.from("bills").select("id", { count: "exact", head: true }).eq("status", "unpaid"),
+          supabase.from("appointments").select("id, scheduled_at, status, patients(full_name), doctors(full_name)").order("scheduled_at", { ascending: false }).limit(6),
+        ]);
+
+        setStats({
+          ...EMPTY_STATS,
+          todayAppointments: todayAppt.count ?? 0,
+          pendingAppointments: pendingAppt.count ?? 0,
+          totalPatients: newPatients.count ?? 0,
+          unpaidBills: unpaidBillsCount.count ?? 0,
+        });
+        setRecentAppts(latestAppt.data ?? []);
+        setMyRecords([]);
+        return;
+      }
+
+      if (primaryRole === "patient" && patientId) {
+        const [allMine, upcomingMine, completedMine, myBills, nextAppts, records] = await Promise.all([
+          supabase.from("appointments").select("id", { count: "exact", head: true }).eq("patient_id", patientId),
+          supabase.from("appointments").select("id", { count: "exact", head: true }).eq("patient_id", patientId).gte("scheduled_at", nowIso),
+          supabase.from("appointments").select("id", { count: "exact", head: true }).eq("patient_id", patientId).eq("status", "completed"),
+          supabase.from("bills").select("id,status,total").eq("patient_id", patientId),
+          supabase
+            .from("appointments")
+            .select("id, scheduled_at, status, patients(full_name), doctors(full_name)")
+            .eq("patient_id", patientId)
+            .gte("scheduled_at", nowIso)
+            .order("scheduled_at", { ascending: true })
+            .limit(6),
+          supabase.from("medical_records").select("id, created_at, diagnosis, doctors(full_name)").eq("patient_id", patientId).order("created_at", { ascending: false }).limit(4),
+        ]);
+
+        const unpaidBillCount = (myBills.data ?? []).filter((b) => b.status === "unpaid").length;
+        setStats({
+          ...EMPTY_STATS,
+          myAppointments: allMine.count ?? 0,
+          myUpcomingAppointments: upcomingMine.count ?? 0,
+          myCompletedAppointments: completedMine.count ?? 0,
+          myUnpaidBills: unpaidBillCount,
+        });
+        setRecentAppts(nextAppts.data ?? []);
+        setMyRecords(records.data ?? []);
+      }
+    })();
+  }, [primaryRole, roles.join(","), user]);
+
+  const roleActions: Record<string, Array<{ label: string; to: string }>> = {
+    admin: [
+      { label: "Open Admin Panel", to: "/admin" },
+      { label: "Manage Appointments", to: "/appointments" },
+      { label: "Review Billing", to: "/billing" },
+    ],
+    doctor: [
+      { label: "Today's Appointments", to: "/appointments" },
+      { label: "Write Records", to: "/records" },
+      { label: "View Patients", to: "/patients" },
+    ],
+    receptionist: [
+      { label: "Book Appointment", to: "/appointments" },
+      { label: "Register Patient", to: "/patients" },
+      { label: "Create Invoice", to: "/billing" },
+    ],
+    patient: [
+      { label: "Book Appointment", to: "/appointments" },
+      { label: "My Records", to: "/records" },
+      { label: "My Billing", to: "/billing" },
+    ],
+  };
+
+  return (
+    <>
+      <PageHeader
+        title={`Welcome back${user?.email ? ", " + user.email.split("@")[0] : ""}`}
+        description={`Signed in as ${primaryRole ?? "user"}.`}
+      />
+
+      {primaryRole === "admin" && (
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard icon={Users} label="Total patients" value={stats.totalPatients} accent="bg-primary/10 text-primary" />
+            <StatCard icon={Stethoscope} label="Total doctors" value={stats.totalDoctors} accent="bg-chart-2/15 text-chart-2" />
+            <StatCard icon={CalendarDays} label="Appointments today" value={stats.todayAppointments} accent="bg-chart-3/15 text-chart-3" />
+            <StatCard icon={DollarSign} label="Paid revenue" value={`₦${stats.paidRevenue.toFixed(2)}`} accent="bg-success/15 text-success" />
+          </div>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <StatCard icon={Clock3} label="Pending appointments" value={stats.pendingAppointments} />
+            <StatCard icon={Receipt} label="Unpaid bills" value={stats.unpaidBills} />
+            <StatCard icon={Activity} label="Total appointments" value={stats.totalAppointments} />
+          </div>
+          <div className="mt-8 grid gap-4 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+              <SectionCard title="Recent appointments">
+                <AppointmentList list={recentAppts} emptyText="No appointments yet." />
+              </SectionCard>
+            </div>
+            <DashboardActions actions={roleActions.admin} />
+          </div>
+        </>
+      )}
+
+      {primaryRole === "doctor" && (
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard icon={CalendarDays} label="All appointments" value={stats.myAppointments} accent="bg-chart-3/15 text-chart-3" />
+            <StatCard icon={Clock3} label="Today" value={stats.todayAppointments} accent="bg-primary/10 text-primary" />
+            <StatCard icon={Activity} label="Pending" value={stats.pendingAppointments} accent="bg-warning/15 text-warning-foreground" />
+            <StatCard icon={CheckCircle2} label="Completed" value={stats.completedAppointments} accent="bg-success/15 text-success" />
+          </div>
+          <div className="mt-8 grid gap-4 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+              <SectionCard title="Upcoming consultations">
+                <AppointmentList list={recentAppts} emptyText="No upcoming consultations." />
+              </SectionCard>
+            </div>
+            <DashboardActions actions={roleActions.doctor} />
+          </div>
+        </>
+      )}
+
+      {primaryRole === "receptionist" && (
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard icon={CalendarDays} label="Appointments today" value={stats.todayAppointments} accent="bg-chart-3/15 text-chart-3" />
+            <StatCard icon={Clock3} label="Pending approvals" value={stats.pendingAppointments} accent="bg-warning/15 text-warning-foreground" />
+            <StatCard icon={Users} label="New patients (month)" value={stats.totalPatients} accent="bg-primary/10 text-primary" />
+            <StatCard icon={Receipt} label="Unpaid invoices" value={stats.unpaidBills} accent="bg-destructive/15 text-destructive" />
+          </div>
+          <div className="mt-8 grid gap-4 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+              <SectionCard title="Latest appointment activity">
+                <AppointmentList list={recentAppts} emptyText="No appointment activity yet." />
+              </SectionCard>
+            </div>
+            <DashboardActions actions={roleActions.receptionist} />
+          </div>
+        </>
+      )}
+
+      {primaryRole === "patient" && (
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard icon={CalendarDays} label="My appointments" value={stats.myAppointments} accent="bg-chart-3/15 text-chart-3" />
+            <StatCard icon={Clock3} label="Upcoming" value={stats.myUpcomingAppointments} accent="bg-primary/10 text-primary" />
+            <StatCard icon={CheckCircle2} label="Completed" value={stats.myCompletedAppointments} accent="bg-success/15 text-success" />
+            <StatCard icon={Receipt} label="Unpaid bills" value={stats.myUnpaidBills} accent="bg-warning/15 text-warning-foreground" />
+          </div>
+          <div className="mt-8 grid gap-4 lg:grid-cols-3">
+            <div className="lg:col-span-2 space-y-4">
+              <SectionCard title="My next appointments">
+                <AppointmentList list={recentAppts} emptyText="No upcoming appointments." />
+              </SectionCard>
+              <SectionCard title="Recent medical records">
+                {myRecords.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No medical records yet.</p>
+                ) : (
+                  <div className="divide-y">
+                    {myRecords.map((record) => (
+                      <div key={record.id} className="flex items-center justify-between py-3 text-sm">
+                        <div>
+                          <div className="font-medium">{record.diagnosis || "General consultation"}</div>
+                          <div className="text-xs text-muted-foreground">Dr. {record.doctors?.full_name ?? "—"}</div>
+                        </div>
+                        <div className="text-xs text-muted-foreground">{format(new Date(record.created_at), "PP")}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </SectionCard>
+            </div>
+            <div className="space-y-4">
+              <DashboardActions actions={roleActions.patient} />
+              <SectionCard title="Health reminder">
+                <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <FileText className="mt-0.5 h-4 w-4 text-primary" />
+                  Keep your profile and contact details updated so appointment reminders and billing notices reach you on time.
+                </div>
+              </SectionCard>
+            </div>
+          </div>
+        </>
+      )}
+    </>
+  );
+}
